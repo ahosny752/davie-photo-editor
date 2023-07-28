@@ -26,9 +26,10 @@ function applyTheme(theme) {
             $('#' + key).val(value);
         }
     }
+    applyTheme(themeVal)
+
 }
 
-    applyTheme(themeVal)
 }
 
 
