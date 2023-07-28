@@ -12,9 +12,11 @@ function applyTheme(theme) {
 
 
   function loadPreferences() {
-    if(preferencesJSON){
  
-    var preferencesJSON = localStorage.getItem('palleon_preferences');
+    var preferencesJSON = localStorage?.getItem('palleon_preferences');
+    if(preferencesJSON){
+        console.log(preferencesJSON, 'prfs')
+
     var settings = JSON.parse(preferencesJSON);
     const themeVal = settings["custom-theme"]
 
