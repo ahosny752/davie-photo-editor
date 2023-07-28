@@ -1,10 +1,49 @@
 
+
+
+
+
+// Function to handle theme switching
+function applyTheme(theme) {
+    var link = 'css/' + theme + '.css';
+    $("#palleon-theme-link").attr('href', link);
+  }
+  
+
+
+  function loadPreferences() {
+    var preferencesJSON = localStorage.getItem('palleon_preferences');
+    var settings = JSON.parse(preferencesJSON);
+    const themeVal = settings["custom-theme"]
+
+
+    if (preferencesJSON) {
+        for (var key in settings) {
+            var value = settings[key];
+            // Set the preference values in the corresponding DOM elements
+            $('#' + key).val(value);
+        }
+    }
+
+    applyTheme(themeVal)
+}
+
+
 (function($) {
     "use strict";
 
-    $(document).ready(function () {
+    $(function () {
+
+
+
+      
         /* Initialize Palleon plugin */
+        loadPreferences()
+
         $('#palleon').palleon({
+
+
+
             baseURL: "./", // The url of the main directory. For example; "http://www.mysite.com/palleon-js/"
 
             //////////////////////* CANVAS SETTINGS *//////////////////////
@@ -45,6 +84,78 @@
 
             //////////////////////* CUSTOM FUNCTIONS *//////////////////////
             customFunctions: function(selector, canvas, lazyLoadInstance) {
+
+
+                /* Load JSON */
+ function loadJSON(json) {
+    selector.find('#palleon-canvas-loader').css('display', 'flex');
+    rotate = 5;
+    scaleX = json.backgroundImage.scaleX;
+    scaleY = json.backgroundImage.scaleY;
+    originX = json.backgroundImage.originX;
+    originY = json.backgroundImage.originY;
+    canvas.clear();
+    selector.find('#palleon-layers li').remove();
+
+    mode = json.backgroundImage.mode;
+    var blob = dataURLtoBlob(json.backgroundImage.src);
+    imgurl = URL.createObjectURL(blob);
+    selector.find('#palleon-canvas-img').attr("src",imgurl);
+    originalWidth = json.backgroundImage.width;
+    originalHeight = json.backgroundImage.height;
+    var dimentions = {width:originalWidth, height:originalHeight};
+
+    for (var i = 0; i < json.objects.length; i++) {
+        if (json.objects[i].objectType == 'textbox') {
+            json.objects[i].fontFamily = json.objects[i].fontFamily + '-palleon';
+        }
+    }
+
+    canvas.loadFromJSON(json, function() {
+        var objects = canvas.getObjects();
+        var textboxes = objects.filter(element => element.objectType == 'textbox');
+        loadTemplateFonts(textboxes);
+        checkLayers();
+        selector.find('#palleon-canvas-color').spectrum("set", canvas.backgroundColor);
+        selector.find('#custom-image-background').spectrum("set", canvas.backgroundColor);
+        img = selector.find('#palleon-canvas-img')[0];
+        canvas.requestRenderAll();
+        selector.find('#palleon-canvas-loader').hide();
+    }, function() {}, {
+        crossOrigin: 'anonymous'
+    });
+
+    setFileName(new Date().getTime(), '');
+    setDimentions(dimentions);
+    adjustZoom();
+    modeCheck();
+    canvas.fire('selection:cleared');
+    setTimeout(function(){ 
+        selector.find("#palleon-layers > li").removeClass('active');
+        if (json.backgroundImage) {
+            adjustFilterControls(json.backgroundImage["filters"]);
+        }
+        if (json.overlayImage) {
+            selector.find('#palleon-overlay-wrap').show();
+            selector.find('#palleon-overlay-preview').attr('src', json.overlayImage.src);
+        } else {
+            selector.find('#palleon-overlay-wrap').hide();
+            selector.find('#palleon-overlay-preview').attr('src', '');
+        }
+    }, 100);
+}
+
+
+fetch('../files/templates/json/new.json')
+.then(response => response.json())
+.then(jsonData => {
+  console.log(jsonData, 'dater')
+  loadJSON(jsonData)
+})
+.catch(error => {
+  console.error('Error loading JSON file:', error);
+});
+
                 /**
                  * @see http://fabricjs.com/fabric-intro-part-1#canvas
                  * You may need to update "lazyLoadInstance" if you are going to populate items of a grid with ajax. 
@@ -151,9 +262,11 @@
                 selector.find('#palleon-preferences-save').on('click', function() {
                     var button = $(this);
                     var settings = {};
+                    console.log(settings, 'settings')
                     var keys = [];
                     var values = [];
                     selector.find('#palleon-preferences .preference').each(function(index, value) {
+
                         keys.push($(this).attr('id'));
                         values.push($(this).val());
                     });
@@ -164,12 +277,23 @@
 
                     var preferences = JSON.stringify(settings);
 
-                    /* Do what you want */
+                    console.log(preferences, 'preffs')
 
-                    toastr.success("To make 'saving functions' work, you should have a database on your server and integrate it to Palleon using a server-side language. See Documentation -> Integration.", "Info");
+                    /* Do what you want */
+                    localStorage.setItem('palleon_preferences', preferences);
+
+
+                    toastr.success("Saved");
                     // toastr.error("Error!", "Lorem ipsum dolor");
 
                 });
+
+
+
+                // Function to load preferences from local storage and set them on page load
+
+
+
             },
 
             //////////////////////* SAVE TEMPLATE *//////////////////////
@@ -181,7 +305,7 @@
 
                 // var name = selector.find('#palleon-json-save-name').val();
                 
-                console.log(template);
+                console.log(template, 'template');
 
                 /* Do what you want */
 
@@ -216,5 +340,7 @@
             }
         });
     });
+
+
 
 })(jQuery);
