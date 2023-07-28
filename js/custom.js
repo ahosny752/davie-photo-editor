@@ -12,6 +12,8 @@ function applyTheme(theme) {
 
 
   function loadPreferences() {
+    if(preferencesJSON){
+ 
     var preferencesJSON = localStorage.getItem('palleon_preferences');
     var settings = JSON.parse(preferencesJSON);
     const themeVal = settings["custom-theme"]
@@ -24,6 +26,7 @@ function applyTheme(theme) {
             $('#' + key).val(value);
         }
     }
+}
 
     applyTheme(themeVal)
 }
